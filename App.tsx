@@ -8,6 +8,7 @@ import { checkCompliance, optimizeTemplate } from './services/geminiService';
 const STORAGE_KEY_API = 'whatsbulk_api_config';
 const STORAGE_KEY_CAMPAIGNS = 'whatsbulk_campaigns';
 const STORAGE_KEY_CONTACTS = 'whatsbulk_contacts';
+const STORAGE_KEY_AUTH = 'whatsbulk_is_authenticated';
 
 const INITIAL_API_CONFIG: ApiConfig = {
   accessToken: '',
@@ -23,9 +24,16 @@ const INITIAL_CONTACTS: Contact[] = [
 ];
 
 const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem(STORAGE_KEY_AUTH) === 'true';
+  });
+  
+  const [loginId, setLoginId] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'campaigns' | 'contacts' | 'policy' | 'settings'>('dashboard');
   
-  // States with LocalStorage Persistence
   const [apiConfig, setApiConfig] = useState<ApiConfig>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_API);
     return saved ? JSON.parse(saved) : INITIAL_API_CONFIG;
@@ -41,7 +49,6 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : INITIAL_CONTACTS;
   });
 
-  // UI States
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newCampaign, setNewCampaign] = useState<Partial<Campaign>>({
     name: '',
@@ -51,10 +58,26 @@ const App: React.FC = () => {
   const [complianceResult, setComplianceResult] = useState<ComplianceCheck | null>(null);
   const [isChecking, setIsChecking] = useState(false);
 
-  // Sync with LocalStorage
   useEffect(() => localStorage.setItem(STORAGE_KEY_API, JSON.stringify(apiConfig)), [apiConfig]);
   useEffect(() => localStorage.setItem(STORAGE_KEY_CAMPAIGNS, JSON.stringify(campaigns)), [campaigns]);
   useEffect(() => localStorage.setItem(STORAGE_KEY_CONTACTS, JSON.stringify(contacts)), [contacts]);
+  useEffect(() => localStorage.setItem(STORAGE_KEY_AUTH, isAuthenticated.toString()), [isAuthenticated]);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loginId === 'Twind' && loginPassword === 'TW1234') {
+      setIsAuthenticated(true);
+      setLoginError(false);
+    } else {
+      setLoginError(true);
+      setLoginPassword('');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem(STORAGE_KEY_AUTH);
+  };
 
   const handleSaveConfig = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,10 +115,7 @@ const App: React.FC = () => {
       setActiveTab('settings');
       return;
     }
-
     setCampaigns(prev => prev.map(c => c.id === id ? { ...c, status: CampaignStatus.SENDING } : c));
-
-    // Simulazione invio massivo API
     setTimeout(() => {
       setCampaigns(prev => prev.map(c => {
         if (c.id === id) {
@@ -110,6 +130,82 @@ const App: React.FC = () => {
       }));
     }, 2500);
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] p-4 font-['Inter']">
+        <div className="max-w-md w-full animate-in fade-in zoom-in-95 duration-500">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-black text-[#25D366] tracking-tighter flex justify-center items-center gap-2">
+              WhatsBulk<span className="text-gray-900">PRO</span>
+            </h1>
+            <p className="text-gray-500 font-medium mt-2">Accedi alla tua dashboard professionale</p>
+          </div>
+          
+          <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl border border-gray-100">
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest px-1">ID Utente</label>
+                <input 
+                  type="text" 
+                  required
+                  value={loginId}
+                  onChange={(e) => setLoginId(e.target.value)}
+                  className={`w-full p-4 bg-gray-50 border ${loginError ? 'border-red-300 ring-2 ring-red-100' : 'border-gray-200'} rounded-2xl outline-none focus:ring-2 focus:ring-green-500 transition-all font-bold text-gray-900 placeholder-gray-400`}
+                  placeholder="Inserisci ID Account"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest px-1">Password</label>
+                <div className="relative">
+                  <input 
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    className={`w-full p-4 pr-12 bg-gray-50 border ${loginError ? 'border-red-300 ring-2 ring-red-100' : 'border-gray-200'} rounded-2xl outline-none focus:ring-2 focus:ring-green-500 transition-all font-mono text-gray-900 placeholder-gray-400`}
+                    placeholder="••••••••"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    )}
+                  </button>
+                  {loginError && (
+                    <p className="text-red-500 text-[10px] font-bold mt-2 text-center animate-bounce">Credenziali non valide. Riprova.</p>
+                  )}
+                </div>
+              </div>
+
+              <button 
+                type="submit" 
+                className="w-full bg-black text-white py-4 rounded-2xl font-black shadow-xl hover:bg-gray-800 transform hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                Sblocca Dashboard
+              </button>
+
+              <div className="pt-4 text-center">
+                <p className="text-xs text-gray-400">
+                  Accesso: <code className="bg-gray-100 px-1.5 py-0.5 rounded font-bold text-gray-600">Twind</code> / <code className="bg-gray-100 px-1.5 py-0.5 rounded font-bold text-gray-600">TW1234</code>
+                </p>
+              </div>
+            </form>
+          </div>
+          
+          <p className="text-center text-[10px] text-gray-400 mt-8 uppercase font-bold tracking-widest">
+            Crittografia End-to-End & Compliance Meta v4.0
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const renderDashboard = () => (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -212,7 +308,7 @@ const App: React.FC = () => {
           <p className="text-green-50 text-lg max-w-xl opacity-90">Evita il ban del tuo numero Business seguendo queste linee guida fondamentali per i messaggi massivi.</p>
         </div>
         <div className="absolute top-0 right-0 p-10 opacity-10">
-          <svg className="w-48 h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.246 2.248 3.484 5.232 3.483 8.412-.003 6.557-5.338 11.892-11.893 11.892-1.997-.001-3.951-.5-5.688-1.448l-6.308 1.656zm6.303-4.108l.307.182c1.448.859 3.072 1.312 4.73 1.313 5.234 0 9.493-4.259 9.495-9.493.001-2.537-.987-4.922-2.783-6.72s-4.183-2.784-6.72-2.784c-5.234 0-9.493 4.259-9.495 9.493-.001 2.01.525 3.975 1.522 5.717l.21.365-1.003 3.665 3.743-.982zm12.011-9.303c-.202-.101-1.192-.588-1.377-.655-.185-.067-.32-.101-.454.101-.134.202-.522.655-.639.79-.117.135-.235.151-.437.05-.202-.101-.852-.314-1.623-.101a5.99 5.99 0 00-1.127-.696c-.183-.106-.368-.212-.553-.31-.101-.202-.151-.437-.101-.639.05-.202.202-.437.303-.538.101-.101.135-.168.202-.269.067-.101.034-.185-.017-.286-.05-.101-.454-1.093-.622-1.5-.164-.397-.33-.343-.454-.349l-.387-.007c-.134 0-.354.05-.539.252-.185.202-.707.69-0.707 1.684s.724 1.953.825 2.088c.101.135 1.425 2.176 3.453 3.053.482.209.858.334 1.151.428.484.154.925.132 1.272.08.387-.058 1.192-.488 1.361-.959.168-.471.168-.875.117-.959-.05-.084-.185-.134-.387-.235z" /></svg>
+          <svg className="w-48 h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.246 2.248 3.484 5.232 3.483 8.412-.003 6.557-5.338 11.892-11.893 11.892-1.997-.001-3.951-.5-5.688-1.448l-6.308 1.656zm6.303-4.108l.307.182c1.448.859 3.072 1.312 4.73 1.313 5.234 0 9.493-4.259 9.495-9.493.001-2.537-.987-4.922-2.783-6.72s-4.183-2.784-6.72-2.784c-5.234 0-9.493-4.259-9.495 9.493-.001 2.01.525 3.975 1.522 5.717l.21.365-1.003 3.665 3.743-.982zm12.011-9.303c-.202-.101-1.192-.588-1.377-.655-.185-.067-.32-.101-.454.101-.134.202-.522.655-.639.79-.117.135-.235.151-.437.05-.202-.101-.852-.314-1.623-.101a5.99 5.99 0 00-1.127-.696c-.183-.106-.368-.212-.553-.31-.101-.202-.151-.437-.101-.639.05-.202.202-.437.303-.538.101-.101.135-.168.202-.269.067-.101.034-.185-.017-.286-.05-.101-.454-1.093-.622-1.5-.164-.397-.33-.343-.454-.349l-.387-.007c-.134 0-.354.05-.539.252-.185.202-.707.69-0.707 1.684s.724 1.953.825 2.088c.101.135 1.425 2.176 3.453 3.053.482.209.858.334 1.151.428.484.154.925.132 1.272.08.387-.058 1.192-.488 1.361-.959.168-.471.168-.875.117-.959-.05-.084-.185-.134-.387-.235z" /></svg>
         </div>
       </div>
 
@@ -245,7 +341,7 @@ const App: React.FC = () => {
               type="password" 
               value={apiConfig.accessToken}
               onChange={e => setApiConfig({...apiConfig, accessToken: e.target.value})}
-              className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all font-mono text-sm" 
+              className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all font-mono text-sm text-gray-900" 
               placeholder="EAAB..." 
             />
           </div>
@@ -256,7 +352,7 @@ const App: React.FC = () => {
                 type="text" 
                 value={apiConfig.phoneNumberId}
                 onChange={e => setApiConfig({...apiConfig, phoneNumberId: e.target.value})}
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all" 
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all text-gray-900" 
                 placeholder="102938..." 
               />
             </div>
@@ -266,7 +362,7 @@ const App: React.FC = () => {
                 type="text" 
                 value={apiConfig.wabaId}
                 onChange={e => setApiConfig({...apiConfig, wabaId: e.target.value})}
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all" 
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all text-gray-900" 
                 placeholder="556677..." 
               />
             </div>
@@ -292,7 +388,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#f8fafc]">
-      {/* Sidebar Desktop */}
       <aside className="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-auto md:h-screen z-20">
         <div className="p-8">
           <h1 className="text-2xl font-black text-[#25D366] tracking-tighter flex items-center gap-2">
@@ -322,9 +417,18 @@ const App: React.FC = () => {
             </button>
           ))}
         </nav>
+
+        <div className="p-4 border-t border-gray-100">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 transition-all"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            Logout
+          </button>
+        </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 p-6 md:p-12 overflow-y-auto max-w-7xl mx-auto w-full">
         <header className="mb-10 flex justify-between items-center">
           <div>
@@ -374,7 +478,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Modal Creazione Avanzata */}
         {showCreateModal && (
           <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-white rounded-[2rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
@@ -387,14 +490,14 @@ const App: React.FC = () => {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
-              <div className="p-8 overflow-y-auto space-y-6">
+              <div className="p-8 overflow-y-auto space-y-6 text-gray-900">
                 <div className="space-y-2">
                   <label className="text-xs font-black uppercase text-gray-400 tracking-widest">Titolo Identificativo</label>
                   <input 
                     type="text" 
                     value={newCampaign.name}
                     onChange={e => setNewCampaign({...newCampaign, name: e.target.value})}
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-green-500 transition-all font-bold" 
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-green-500 transition-all font-bold text-gray-900" 
                     placeholder="es: Promo Black Friday 2024"
                   />
                 </div>
@@ -404,11 +507,10 @@ const App: React.FC = () => {
                     rows={5}
                     value={newCampaign.messageText}
                     onChange={e => setNewCampaign({...newCampaign, messageText: e.target.value})}
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-green-500 transition-all"
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-green-500 transition-all text-gray-900"
                     placeholder="Ciao {{1}}, abbiamo riservato per te..."
                   ></textarea>
                 </div>
-                
                 <div className="flex gap-4">
                   <button 
                     onClick={async () => {
@@ -429,7 +531,6 @@ const App: React.FC = () => {
                     ) : 'Verifica Policy AI'}
                   </button>
                 </div>
-
                 {complianceResult && (
                   <div className="p-6 bg-gray-50 rounded-3xl border border-gray-200 animate-in fade-in slide-in-from-top-2">
                     <ComplianceBadge score={complianceResult.score} isCompliant={complianceResult.isCompliant} />
