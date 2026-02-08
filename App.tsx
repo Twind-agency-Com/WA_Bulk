@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Campaign, CampaignStatus, Contact, TemplateCategory, ComplianceCheck, ApiConfig } from './types';
 import { CampaignCard } from './components/CampaignCard';
 import { ComplianceBadge } from './components/ComplianceBadge';
@@ -49,6 +49,9 @@ const App: React.FC = () => {
   });
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAddContactModal, setShowAddContactModal] = useState(false);
+  const [newContact, setNewContact] = useState({ name: '', phone: '', email: '' });
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [newCampaign, setNewCampaign] = useState<Partial<Campaign>>({
     name: '',
     messageText: '',
@@ -106,7 +109,135 @@ const App: React.FC = () => {
     setNewCampaign({ name: '', messageText: '', category: TemplateCategory.MARKETING });
     setComplianceResult(null);
     setActiveTab('campaigns');
+  }
+
+  const handleAddContact = (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = newContact.name.trim();
+    let phone = newContact.phone.trim().replace(/[^\d+]/g, '');
+
+    if (!name || !phone) {
+      alert("Nome e Telefono sono obbligatori");
+      return;
+    }
+
+    // Default Italy prefix if missing
+    if (!phone.startsWith('+')) phone = `+39${phone}`;
+
+    const contact: Contact = {
+      id: `manual-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      name,
+      phone,
+      email: newContact.email?.trim() || undefined,
+      optInDate: new Date().toISOString().split('T')[0],
+      tags: ["manual"],
+      hasOptIn: true
+    };
+
+    setContacts(prev => [contact, ...prev]);
+    setNewContact({ name: '', phone: '', email: '' });
+    setShowAddContactModal(false);
   };
+
+  const handleDeleteContact = (id: string) => {
+    if (window.confirm("Sei sicuro di voler eliminare questo contatto definitivamente?")) {
+      setContacts(prev => prev.filter(c => c.id !== id));
+    }
+  };
+
+  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        if (!text) throw new Error("File vuoto");
+
+        const lines = text
+          .split(/\r?\n/)
+          .map(l => l.trim())
+          .filter(l => l.length > 0);
+
+        if (lines.length < 2) throw new Error("CSV non valido: mancano righe");
+
+        // Detect delimiter (comma or semicolon)
+        const delimiter = (lines[0].includes(';') && !lines[0].includes(',')) ? ';' : ',';
+
+        const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase());
+
+        const idxName = headers.findIndex(h => ["name","nome","full_name","fullname"].includes(h));
+        const idxPhone = headers.findIndex(h => ["phone","telefono","cellulare","mobile","numero"].includes(h));
+        const idxEmail = headers.findIndex(h => ["email","mail","e-mail"].includes(h));
+
+        if (idxName === -1 || idxPhone === -1) {
+          throw new Error("CSV non valido: servono colonne name/nome e phone/telefono");
+        }
+
+        const parsed: Contact[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(delimiter).map(c => c.trim());
+          const name = (cols[idxName] || "").trim();
+          let phone = (cols[idxPhone] || "").trim().replace(/[^\d+]/g, '');
+          const email = idxEmail >= 0 ? (cols[idxEmail] || "").trim() : "";
+
+          if (!name || !phone) continue;
+          if (!phone.startsWith('+')) phone = `+39${phone}`;
+
+          parsed.push({
+            id: `csv-${Date.now()}-${i}-${Math.random().toString(16).slice(2)}`,
+            name,
+            phone,
+            email: email || undefined,
+            optInDate: new Date().toISOString().split('T')[0],
+            tags: ["csv"],
+            hasOptIn: true
+          });
+        }
+
+        if (parsed.length === 0) throw new Error("Nessun contatto valido trovato nel CSV");
+
+        // Merge/deduplicate by phone
+        setContacts(prev => {
+          const map = new Map(prev.map(c => [c.phone, c]));
+          let added = 0;
+          let updated = 0;
+
+          for (const c of parsed) {
+            const existing = map.get(c.phone);
+            if (!existing) {
+              map.set(c.phone, c);
+              added++;
+            } else {
+              // Update missing fields only
+              const merged = {
+                ...existing,
+                name: existing.name || c.name,
+                email: existing.email || c.email,
+                tags: Array.from(new Set([...(existing.tags || []), ...(c.tags || [])])),
+                hasOptIn: existing.hasOptIn || c.hasOptIn
+              };
+              map.set(c.phone, merged);
+              updated++;
+            }
+          }
+
+          alert(`Import completato: aggiunti ${added}, aggiornati ${updated}.`);
+          return Array.from(map.values());
+        });
+
+      } catch (err: any) {
+        alert(err?.message || "Errore durante import CSV");
+      } finally {
+        // reset input so user can import same file again
+        e.target.value = "";
+      }
+    };
+
+    reader.readAsText(file);
+  };
+;
 
   const launchCampaign = (id: string) => {
     if (!apiConfig.isConfigured) {
@@ -263,8 +394,10 @@ const App: React.FC = () => {
           <p className="text-xs text-gray-500 mt-1">Solo i contatti con opt-in verificato possono ricevere messaggi.</p>
         </div>
         <div className="flex gap-2">
-          <button className="px-4 py-2 bg-white border border-gray-200 text-sm font-bold rounded-lg hover:bg-gray-50 transition-colors">Importa CSV</button>
-          <button className="px-4 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-colors">Aggiungi</button>
+          <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-white border border-gray-200 text-sm font-bold rounded-lg hover:bg-gray-50 transition-colors">Importa CSV</button>
+          <button onClick={() => setShowAddContactModal(true)} className="px-4 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-colors">Aggiungi</button>
+        </div>
+          <input ref={fileInputRef} type="file" accept=".csv,text/csv" onChange={handleImportCSV} className="hidden" />
         </div>
       </div>
       <div className="overflow-x-auto">
@@ -289,7 +422,7 @@ const App: React.FC = () => {
                     {contact.tags.map(t => <span key={t} className="px-2 py-0.5 bg-green-50 text-green-700 text-[10px] font-black uppercase rounded-full">#{t}</span>)}
                   </div>
                 </td>
-                <td className="px-6 py-4 text-gray-400 hover:text-red-500 cursor-pointer">
+                <td onClick={() => handleDeleteContact(contact.id)} className="px-6 py-4 text-gray-400 hover:text-red-500 cursor-pointer">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </td>
               </tr>
@@ -493,6 +626,53 @@ const App: React.FC = () => {
             </div>
           </div>
         )}
+      {/* Modal Aggiungi Contatto */}
+      {showAddContactModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[3rem] w-full max-w-md p-10 shadow-2xl animate-in zoom-in-95">
+            <h3 className="text-2xl font-black mb-8">Nuovo Contatto</h3>
+            <form onSubmit={handleAddContact} className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black uppercase text-gray-400 block mb-2 px-1">Nome</label>
+                <input
+                  type="text"
+                  required
+                  value={newContact.name}
+                  onChange={e => setNewContact({ ...newContact, name: e.target.value })}
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-black"
+                  placeholder="es. Mario Rossi"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase text-gray-400 block mb-2 px-1">Telefono</label>
+                <input
+                  type="tel"
+                  required
+                  value={newContact.phone}
+                  onChange={e => setNewContact({ ...newContact, phone: e.target.value })}
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-mono focus:ring-2 focus:ring-black"
+                  placeholder="3331234567"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase text-gray-400 block mb-2 px-1">Email (Opzionale)</label>
+                <input
+                  type="email"
+                  value={newContact.email}
+                  onChange={e => setNewContact({ ...newContact, email: e.target.value })}
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black"
+                  placeholder="mario@esempio.it"
+                />
+              </div>
+              <div className="flex gap-4 pt-8">
+                <button type="button" onClick={() => setShowAddContactModal(false)} className="flex-1 py-4 font-bold text-gray-400">Annulla</button>
+                <button type="submit" className="flex-1 bg-black text-white py-4 rounded-2xl font-black shadow-xl">Salva</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       </main>
     </div>
   );
