@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Campaign, CampaignStatus, Contact, TemplateCategory, ComplianceCheck, ApiConfig } from './types';
 import { CampaignCard } from './components/CampaignCard';
@@ -133,8 +132,8 @@ const App: React.FC = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] p-4 font-['Inter']">
-        <div className="max-w-md w-full animate-in fade-in zoom-in-95 duration-500">
+      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] p-4">
+        <div className="max-w-md w-full">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-black text-[#25D366] tracking-tighter flex justify-center items-center gap-2">
               WhatsBulk<span className="text-gray-900">PRO</span>
@@ -149,6 +148,7 @@ const App: React.FC = () => {
                 <input 
                   type="text" 
                   required
+                  autoFocus
                   value={loginId}
                   onChange={(e) => setLoginId(e.target.value)}
                   className={`w-full p-4 bg-gray-50 border ${loginError ? 'border-red-300 ring-2 ring-red-100' : 'border-gray-200'} rounded-2xl outline-none focus:ring-2 focus:ring-green-500 transition-all font-bold text-gray-900 placeholder-gray-400`}
@@ -178,22 +178,22 @@ const App: React.FC = () => {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                     )}
                   </button>
-                  {loginError && (
-                    <p className="text-red-500 text-[10px] font-bold mt-2 text-center animate-bounce">Credenziali non valide. Riprova.</p>
-                  )}
                 </div>
+                {loginError && (
+                  <p className="text-red-500 text-[10px] font-bold mt-2 text-center">Credenziali non valide. Riprova.</p>
+                )}
               </div>
 
               <button 
                 type="submit" 
-                className="w-full bg-black text-white py-4 rounded-2xl font-black shadow-xl hover:bg-gray-800 transform hover:scale-[1.02] active:scale-95 transition-all"
+                className="w-full bg-black text-white py-4 rounded-2xl font-black shadow-xl hover:bg-gray-800 transition-all"
               >
                 Sblocca Dashboard
               </button>
 
               <div className="pt-4 text-center">
                 <p className="text-xs text-gray-400">
-                  Accesso: <code className="bg-gray-100 px-1.5 py-0.5 rounded font-bold text-gray-600">Twind</code> / <code className="bg-gray-100 px-1.5 py-0.5 rounded font-bold text-gray-600">TW1234</code>
+                  Account: <code className="bg-gray-100 px-1.5 py-0.5 rounded font-bold text-gray-600">Twind</code> / <code className="bg-gray-100 px-1.5 py-0.5 rounded font-bold text-gray-600">TW1234</code>
                 </p>
               </div>
             </form>
@@ -208,7 +208,7 @@ const App: React.FC = () => {
   }
 
   const renderDashboard = () => (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
           <p className="text-xs font-bold text-gray-400 uppercase">Invii Totali</p>
@@ -244,7 +244,7 @@ const App: React.FC = () => {
           <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Action: Crea Template</h3>
           <div className="space-y-4">
             <textarea 
-              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
               placeholder="Scrivi qui per testare la compliance AI..."
               rows={3}
             />
@@ -256,7 +256,7 @@ const App: React.FC = () => {
   );
 
   const renderContacts = () => (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50/50">
         <div>
           <h2 className="text-xl font-bold text-gray-800">Database Audience</h2>
@@ -301,14 +301,11 @@ const App: React.FC = () => {
   );
 
   const renderPolicyGuide = () => (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
+    <div className="max-w-4xl mx-auto space-y-8">
       <div className="bg-gradient-to-r from-green-600 to-green-500 text-white p-10 rounded-3xl shadow-xl relative overflow-hidden">
         <div className="relative z-10">
           <h2 className="text-4xl font-black mb-4">Regole d'Oro di Meta</h2>
           <p className="text-green-50 text-lg max-w-xl opacity-90">Evita il ban del tuo numero Business seguendo queste linee guida fondamentali per i messaggi massivi.</p>
-        </div>
-        <div className="absolute top-0 right-0 p-10 opacity-10">
-          <svg className="w-48 h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.246 2.248 3.484 5.232 3.483 8.412-.003 6.557-5.338 11.892-11.893 11.892-1.997-.001-3.951-.5-5.688-1.448l-6.308 1.656zm6.303-4.108l.307.182c1.448.859 3.072 1.312 4.73 1.313 5.234 0 9.493-4.259 9.495-9.493.001-2.537-.987-4.922-2.783-6.72s-4.183-2.784-6.72-2.784c-5.234 0-9.493-4.259-9.495 9.493-.001 2.01.525 3.975 1.522 5.717l.21.365-1.003 3.665 3.743-.982zm12.011-9.303c-.202-.101-1.192-.588-1.377-.655-.185-.067-.32-.101-.454.101-.134.202-.522.655-.639.79-.117.135-.235.151-.437.05-.202-.101-.852-.314-1.623-.101a5.99 5.99 0 00-1.127-.696c-.183-.106-.368-.212-.553-.31-.101-.202-.151-.437-.101-.639.05-.202.202-.437.303-.538.101-.101.135-.168.202-.269.067-.101.034-.185-.017-.286-.05-.101-.454-1.093-.622-1.5-.164-.397-.33-.343-.454-.349l-.387-.007c-.134 0-.354.05-.539.252-.185.202-.707.69-0.707 1.684s.724 1.953.825 2.088c.101.135 1.425 2.176 3.453 3.053.482.209.858.334 1.151.428.484.154.925.132 1.272.08.387-.058 1.192-.488 1.361-.959.168-.471.168-.875.117-.959-.05-.084-.185-.134-.387-.235z" /></svg>
         </div>
       </div>
 
@@ -329,7 +326,7 @@ const App: React.FC = () => {
   );
 
   const renderSettings = () => (
-    <div className="max-w-2xl mx-auto space-y-6 animate-in zoom-in-95 duration-500">
+    <div className="max-w-2xl mx-auto space-y-6">
       <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
         <h2 className="text-2xl font-black text-gray-900 mb-2">WhatsApp Cloud API</h2>
         <p className="text-sm text-gray-500 mb-8">Inserisci le tue credenziali da Meta for Developers per abilitare l'invio reale.</p>
@@ -352,7 +349,7 @@ const App: React.FC = () => {
                 type="text" 
                 value={apiConfig.phoneNumberId}
                 onChange={e => setApiConfig({...apiConfig, phoneNumberId: e.target.value})}
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all text-gray-900" 
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all text-gray-900 font-bold" 
                 placeholder="102938..." 
               />
             </div>
@@ -362,26 +359,13 @@ const App: React.FC = () => {
                 type="text" 
                 value={apiConfig.wabaId}
                 onChange={e => setApiConfig({...apiConfig, wabaId: e.target.value})}
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all text-gray-900" 
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all text-gray-900 font-bold" 
                 placeholder="556677..." 
               />
             </div>
           </div>
           <button type="submit" className="w-full bg-black text-white py-4 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg">Salva e Collega Account</button>
         </form>
-      </div>
-      
-      <div className="bg-blue-600 text-white p-6 rounded-2xl flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-white/20 rounded-xl">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          </div>
-          <div>
-            <p className="font-bold">Hai bisogno di aiuto?</p>
-            <p className="text-sm opacity-80">Leggi la documentazione ufficiale di Meta per ottenere i token.</p>
-          </div>
-        </div>
-        <a href="https://developers.facebook.com/docs/whatsapp/cloud-api" target="_blank" className="bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors">Docs</a>
       </div>
     </div>
   );
@@ -432,20 +416,8 @@ const App: React.FC = () => {
       <main className="flex-1 p-6 md:p-12 overflow-y-auto max-w-7xl mx-auto w-full">
         <header className="mb-10 flex justify-between items-center">
           <div>
-            <h2 className="text-3xl font-black text-gray-900">
-              {activeTab === 'dashboard' && 'Riepilogo'}
-              {activeTab === 'campaigns' && 'Invii Massivi'}
-              {activeTab === 'contacts' && 'Audience'}
-              {activeTab === 'policy' && 'Education'}
-              {activeTab === 'settings' && 'WhatsApp Cloud API'}
-            </h2>
-            <p className="text-gray-500 font-medium mt-1">
-              {activeTab === 'dashboard' && 'Monitora le performance della tua comunicazione.'}
-              {activeTab === 'campaigns' && 'Gestisci, crea e lancia i tuoi template approvati.'}
-              {activeTab === 'contacts' && 'La tua lista contatti verificata e profilata.'}
-              {activeTab === 'policy' && 'Impara a comunicare senza rischi di sospensione.'}
-              {activeTab === 'settings' && 'Connetti la tua infrastruttura Meta Business.'}
-            </p>
+            <h2 className="text-3xl font-black text-gray-900 capitalize">{activeTab}</h2>
+            <p className="text-gray-500 font-medium mt-1">Gestisci la tua comunicazione professionale con WhatsBulk Pro.</p>
           </div>
           <button onClick={() => setShowCreateModal(true)} className="bg-black text-white px-6 py-3 rounded-xl font-bold shadow-xl hover:bg-gray-800 transition-all flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-0h6m-6 0H6" /></svg>
@@ -458,109 +430,65 @@ const App: React.FC = () => {
         {activeTab === 'policy' && renderPolicyGuide()}
         {activeTab === 'settings' && renderSettings()}
         {activeTab === 'campaigns' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
-            {campaigns.length > 0 ? (
-              campaigns.map(c => (
-                <div key={c.id} className="relative group">
-                  <CampaignCard campaign={c} />
-                  {c.status === CampaignStatus.DRAFT && (
-                    <div className="absolute inset-0 bg-white/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl backdrop-blur-[2px]">
-                      <button onClick={() => launchCampaign(c.id)} className="bg-[#25D366] text-white px-8 py-3 rounded-full font-black shadow-2xl hover:scale-110 transition-transform">Lancia Campagna</button>
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              <div className="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed border-gray-300">
-                <p className="text-gray-400 font-bold">Nessuna campagna presente. Creane una nuova!</p>
-              </div>
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in">
+            {campaigns.length > 0 ? campaigns.map(c => <CampaignCard key={c.id} campaign={c} />) : <div className="col-span-full py-20 text-center text-gray-400 font-bold border-2 border-dashed border-gray-200 rounded-3xl">Nessuna campagna creata.</div>}
           </div>
         )}
 
         {showCreateModal && (
-          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white rounded-[2rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
+          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-[2rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
               <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                <div>
-                  <h3 className="text-2xl font-black text-gray-900">Configura Invio</h3>
-                  <p className="text-sm text-gray-500">Il messaggio passerà attraverso il filtro AI di Gemini.</p>
-                </div>
-                <button onClick={() => setShowCreateModal(false)} className="w-10 h-10 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-900 shadow-sm transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                <h3 className="text-2xl font-black text-gray-900">Configura Invio</h3>
+                <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-900 transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
-              <div className="p-8 overflow-y-auto space-y-6 text-gray-900">
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase text-gray-400 tracking-widest">Titolo Identificativo</label>
-                  <input 
-                    type="text" 
-                    value={newCampaign.name}
-                    onChange={e => setNewCampaign({...newCampaign, name: e.target.value})}
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-green-500 transition-all font-bold text-gray-900" 
-                    placeholder="es: Promo Black Friday 2024"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase text-gray-400 tracking-widest">Testo del Messaggio</label>
-                  <textarea 
-                    rows={5}
-                    value={newCampaign.messageText}
-                    onChange={e => setNewCampaign({...newCampaign, messageText: e.target.value})}
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-green-500 transition-all text-gray-900"
-                    placeholder="Ciao {{1}}, abbiamo riservato per te..."
-                  ></textarea>
-                </div>
-                <div className="flex gap-4">
-                  <button 
-                    onClick={async () => {
-                      if (!newCampaign.messageText) return;
-                      setIsChecking(true);
-                      const res = await checkCompliance(newCampaign.messageText, newCampaign.category!);
-                      setComplianceResult(res);
-                      setIsChecking(false);
-                    }}
-                    disabled={isChecking || !newCampaign.messageText}
-                    className="flex-1 bg-gray-900 text-white py-4 rounded-2xl font-bold hover:bg-black disabled:opacity-50 transition-all shadow-lg flex items-center justify-center gap-2"
-                  >
-                    {isChecking ? (
-                      <span className="flex items-center gap-2">
-                        <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        Analisi AI...
-                      </span>
-                    ) : 'Verifica Policy AI'}
-                  </button>
-                </div>
+              <div className="p-8 space-y-6">
+                <input 
+                  type="text" 
+                  value={newCampaign.name}
+                  onChange={e => setNewCampaign({...newCampaign, name: e.target.value})}
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-bold outline-none focus:ring-2 focus:ring-green-500" 
+                  placeholder="Titolo Campagna"
+                />
+                <textarea 
+                  rows={5}
+                  value={newCampaign.messageText}
+                  onChange={e => setNewCampaign({...newCampaign, messageText: e.target.value})}
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="Scrivi qui il tuo messaggio..."
+                ></textarea>
+                <button 
+                  onClick={async () => {
+                    if (!newCampaign.messageText) return;
+                    setIsChecking(true);
+                    const res = await checkCompliance(newCampaign.messageText, newCampaign.category!);
+                    setComplianceResult(res);
+                    setIsChecking(false);
+                  }}
+                  disabled={isChecking}
+                  className="w-full bg-gray-900 text-white py-4 rounded-2xl font-bold hover:bg-black transition-all flex items-center justify-center gap-2"
+                >
+                  {isChecking ? "Analisi AI..." : "Verifica Compliance AI"}
+                </button>
                 {complianceResult && (
-                  <div className="p-6 bg-gray-50 rounded-3xl border border-gray-200 animate-in fade-in slide-in-from-top-2">
+                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200">
                     <ComplianceBadge score={complianceResult.score} isCompliant={complianceResult.isCompliant} />
-                    <div className="mt-4 space-y-3">
-                      {complianceResult.warnings.length > 0 && (
-                        <div>
-                          <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Criticità</p>
-                          <ul className="text-xs text-red-700 list-disc pl-4">
-                            {complianceResult.warnings.map((w, i) => <li key={i}>{w}</li>)}
-                          </ul>
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Suggerimenti AI</p>
-                        <ul className="text-xs text-gray-600 list-disc pl-4 italic">
-                          {complianceResult.suggestions.map((s, i) => <li key={i}>{s}</li>)}
-                        </ul>
-                      </div>
-                    </div>
+                    <ul className="mt-3 text-xs text-gray-600 space-y-1">
+                      {complianceResult.suggestions.map((s, i) => <li key={i}>• {s}</li>)}
+                    </ul>
                   </div>
                 )}
               </div>
-              <div className="p-8 bg-gray-50/80 border-t border-gray-100 flex gap-4">
-                 <button 
-                    onClick={handleCreateCampaign}
-                    disabled={!complianceResult || complianceResult.score < 60}
-                    className="flex-1 bg-[#25D366] text-white py-4 rounded-2xl font-black shadow-xl hover:bg-green-600 disabled:opacity-50 disabled:grayscale transition-all"
-                  >
-                    Crea Campagna Draft
-                  </button>
+              <div className="p-8 bg-gray-50 border-t border-gray-100">
+                <button 
+                  onClick={handleCreateCampaign}
+                  disabled={!complianceResult || complianceResult.score < 60}
+                  className="w-full bg-[#25D366] text-white py-4 rounded-2xl font-black shadow-xl hover:bg-green-600 disabled:opacity-50 transition-all"
+                >
+                  Salva Campagna Draft
+                </button>
               </div>
             </div>
           </div>
