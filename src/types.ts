@@ -1,3 +1,4 @@
+
 export enum CampaignStatus {
   DRAFT = 'DRAFT',
   PENDING_APPROVAL = 'PENDING_APPROVAL',
@@ -24,6 +25,8 @@ export interface Contact {
   id: string;
   name: string;
   phone: string;
+  email?: string;
+  notes?: string;
   lastInteracted?: string;
   optInDate: string;
   tags: string[];

@@ -1,7 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ComplianceCheck, TemplateCategory } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Always use the API key directly from process.env.API_KEY as per coding guidelines.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const checkCompliance = async (text: string, category: TemplateCategory): Promise<ComplianceCheck> => {
   const prompt = `Analyze this WhatsApp message template for compliance with Meta's Official WhatsApp Business Policy.
