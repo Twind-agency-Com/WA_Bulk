@@ -397,9 +397,8 @@ const App: React.FC = () => {
           <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-white border border-gray-200 text-sm font-bold rounded-lg hover:bg-gray-50 transition-colors">Importa CSV</button>
           <button onClick={() => setShowAddContactModal(true)} className="px-4 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-colors">Aggiungi</button>
         </div>
-          <input ref={fileInputRef} type="file" accept=".csv,text/csv" onChange={handleImportCSV} className="hidden" />
-        </div>
-      </div>
+	        <input ref={fileInputRef} type="file" accept=".csv,text/csv" onChange={handleImportCSV} className="hidden" />
+	      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead className="bg-gray-50 border-b border-gray-200">
