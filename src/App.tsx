@@ -49,11 +49,13 @@ const App: React.FC = () => {
   });
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAddContactModal, setShowAddContactModal] = useState(false);
   const [newCampaign, setNewCampaign] = useState<Partial<Campaign>>({
     name: '',
     messageText: '',
     category: TemplateCategory.MARKETING
   });
+  const [newContact, setNewContact] = useState({ name: '', phone: '', tags: '' });
   const [complianceResult, setComplianceResult] = useState<ComplianceCheck | null>(null);
   const [isChecking, setIsChecking] = useState(false);
 
@@ -85,6 +87,29 @@ const App: React.FC = () => {
     alert(isReady ? "Configurazione salvata con successo!" : "Attenzione: alcuni campi sono mancanti.");
   };
 
+  const handleAddContact = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newContact.name || !newContact.phone) return;
+
+    const contact: Contact = {
+      id: Date.now().toString(),
+      name: newContact.name,
+      phone: newContact.phone.startsWith('+') ? newContact.phone : `+39${newContact.phone}`,
+      optInDate: new Date().toISOString().split('T')[0],
+      tags: newContact.tags.split(',').map(t => t.trim()).filter(t => t !== '')
+    };
+
+    setContacts([...contacts, contact]);
+    setNewContact({ name: '', phone: '', tags: '' });
+    setShowAddContactModal(false);
+  };
+
+  const handleDeleteContact = (id: string) => {
+    if (confirm("Sei sicuro di voler eliminare questo contatto?")) {
+      setContacts(contacts.filter(c => c.id !== id));
+    }
+  };
+
   const handleCreateCampaign = () => {
     if (!newCampaign.name || !newCampaign.messageText || !complianceResult) return;
 
@@ -108,27 +133,64 @@ const App: React.FC = () => {
     setActiveTab('campaigns');
   };
 
-  const launchCampaign = (id: string) => {
-    if (!apiConfig.isConfigured) {
-      alert("Configura prima le API nelle impostazioni!");
-      setActiveTab('settings');
-      return;
-    }
-    setCampaigns(prev => prev.map(c => c.id === id ? { ...c, status: CampaignStatus.SENDING } : c));
-    setTimeout(() => {
-      setCampaigns(prev => prev.map(c => {
-        if (c.id === id) {
-          return { 
-            ...c, 
-            status: CampaignStatus.COMPLETED, 
-            sentCount: c.totalContacts, 
-            openCount: Math.floor(c.totalContacts * (0.6 + Math.random() * 0.3)) 
-          };
-        }
-        return c;
-      }));
-    }, 2500);
-  };
+  const renderContacts = () => (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50/50">
+        <div>
+          <h2 className="text-xl font-bold text-gray-800">Database Audience</h2>
+          <p className="text-xs text-gray-500 mt-1">Solo i contatti con opt-in verificato possono ricevere messaggi.</p>
+        </div>
+        <div className="flex gap-2">
+          <button className="px-4 py-2 bg-white border border-gray-200 text-sm font-bold rounded-lg hover:bg-gray-50 transition-colors">Importa CSV</button>
+          <button 
+            onClick={() => setShowAddContactModal(true)}
+            className="px-4 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            Aggiungi Contatto
+          </button>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Nome</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Telefono</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Data Opt-In</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Tag</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Azioni</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {contacts.length > 0 ? contacts.map(contact => (
+              <tr key={contact.id} className="hover:bg-gray-50 transition-colors group">
+                <td className="px-6 py-4 font-bold text-gray-900">{contact.name}</td>
+                <td className="px-6 py-4 text-gray-600">{contact.phone}</td>
+                <td className="px-6 py-4 text-gray-500 text-sm">{contact.optInDate}</td>
+                <td className="px-6 py-4">
+                  <div className="flex gap-1">
+                    {contact.tags.map(t => <span key={t} className="px-2 py-0.5 bg-green-50 text-green-700 text-[10px] font-black uppercase rounded-full">#{t}</span>)}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <button 
+                    onClick={() => handleDeleteContact(contact.id)}
+                    className="text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+                </td>
+              </tr>
+            )) : (
+              <tr>
+                <td colSpan={5} className="px-6 py-20 text-center text-gray-400 italic">Nessun contatto in database.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 
   if (!isAuthenticated) {
     return (
@@ -172,7 +234,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#f8fafc]">
-      <aside className="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col h-screen">
+      <aside className="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
         <div className="p-8">
           <h1 className="text-2xl font-black text-[#25D366]">WhatsBulk<span className="text-gray-900">PRO</span></h1>
         </div>
@@ -189,40 +251,147 @@ const App: React.FC = () => {
         </nav>
         <div className="p-4"><button onClick={handleLogout} className="w-full py-3 text-red-500 font-bold hover:bg-red-50 rounded-xl">Logout</button></div>
       </aside>
+
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           <header className="mb-8 flex justify-between items-center">
             <h2 className="text-3xl font-black text-gray-900 capitalize">{activeTab}</h2>
-            <button onClick={() => setShowCreateModal(true)} className="bg-black text-white px-6 py-3 rounded-xl font-bold">Nuova Campagna</button>
+            {activeTab === 'campaigns' && (
+              <button onClick={() => setShowCreateModal(true)} className="bg-black text-white px-6 py-3 rounded-xl font-bold">Nuova Campagna</button>
+            )}
+            {activeTab === 'contacts' && (
+              <button onClick={() => setShowAddContactModal(true)} className="bg-black text-white px-6 py-3 rounded-xl font-bold">Nuovo Contatto</button>
+            )}
           </header>
+
           {activeTab === 'dashboard' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                 <p className="text-xs font-bold text-gray-400 uppercase">Invii</p>
                 <p className="text-3xl font-black">{campaigns.reduce((a, b) => a + b.sentCount, 0)}</p>
               </div>
+              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                <p className="text-xs font-bold text-gray-400 uppercase">Audience</p>
+                <p className="text-3xl font-black">{contacts.length}</p>
+              </div>
             </div>
           )}
+
+          {activeTab === 'contacts' && renderContacts()}
+
           {activeTab === 'campaigns' && (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                {campaigns.map(c => <CampaignCard key={c.id} campaign={c} />)}
+               {campaigns.length === 0 && <div className="col-span-full py-20 text-center text-gray-400">Nessuna campagna presente.</div>}
              </div>
           )}
+
+          {activeTab === 'settings' && (
+            <div className="max-w-xl bg-white p-8 rounded-2xl border border-gray-200">
+              <h3 className="text-xl font-black mb-6">Configurazione Cloud API</h3>
+              <form onSubmit={handleSaveConfig} className="space-y-4">
+                <input 
+                  type="password" 
+                  value={apiConfig.accessToken}
+                  onChange={e => setApiConfig({...apiConfig, accessToken: e.target.value})}
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl font-mono text-sm"
+                  placeholder="Access Token Meta"
+                />
+                <input 
+                  type="text" 
+                  value={apiConfig.phoneNumberId}
+                  onChange={e => setApiConfig({...apiConfig, phoneNumberId: e.target.value})}
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl"
+                  placeholder="Phone ID"
+                />
+                <button type="submit" className="w-full bg-black text-white py-4 rounded-xl font-bold">Salva</button>
+              </form>
+            </div>
+          )}
         </div>
+
+        {/* Modal Nuova Campagna */}
         {showCreateModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl w-full max-w-xl p-8">
+            <div className="bg-white rounded-[2rem] w-full max-w-xl p-8 shadow-2xl">
                <h3 className="text-2xl font-black mb-6">Nuovo Invio</h3>
-               <textarea 
-                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl mb-4" 
-                  rows={4}
-                  placeholder="Testo messaggio..."
-                  onChange={e => setNewCampaign({...newCampaign, messageText: e.target.value})}
-               />
-               <div className="flex gap-4">
-                 <button onClick={() => setShowCreateModal(false)} className="flex-1 py-4 font-bold text-gray-500">Chiudi</button>
-                 <button onClick={handleCreateCampaign} className="flex-1 bg-[#25D366] text-white py-4 rounded-2xl font-bold">Crea Draft</button>
+               <div className="space-y-4">
+                  <input 
+                    type="text" 
+                    placeholder="Nome Campagna" 
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold"
+                    onChange={e => setNewCampaign({...newCampaign, name: e.target.value})}
+                  />
+                  <textarea 
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl" 
+                    rows={4}
+                    placeholder="Testo messaggio..."
+                    onChange={e => setNewCampaign({...newCampaign, messageText: e.target.value})}
+                  />
                </div>
+               <div className="flex gap-4 mt-8">
+                 <button onClick={() => setShowCreateModal(false)} className="flex-1 py-4 font-bold text-gray-500">Chiudi</button>
+                 <button 
+                  onClick={async () => {
+                    if (!newCampaign.messageText) return;
+                    setIsChecking(true);
+                    const res = await checkCompliance(newCampaign.messageText, TemplateCategory.MARKETING);
+                    setComplianceResult(res);
+                    setIsChecking(false);
+                    if (res.score >= 60) handleCreateCampaign();
+                  }}
+                  className="flex-1 bg-[#25D366] text-white py-4 rounded-2xl font-bold"
+                 >
+                   {isChecking ? "Analisi AI..." : "Salva Draft"}
+                 </button>
+               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Aggiungi Contatto */}
+        {showAddContactModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl">
+              <h3 className="text-2xl font-black mb-6">Nuovo Contatto</h3>
+              <form onSubmit={handleAddContact} className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">Nome Completo</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={newContact.name}
+                    onChange={e => setNewContact({...newContact, name: e.target.value})}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold"
+                    placeholder="Es: Mario Rossi"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">Numero WhatsApp</label>
+                  <input 
+                    type="tel" 
+                    required
+                    value={newContact.phone}
+                    onChange={e => setNewContact({...newContact, phone: e.target.value})}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold"
+                    placeholder="3331234567 (Prefisso +39 auto)"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">Tag (Separati da virgola)</label>
+                  <input 
+                    type="text" 
+                    value={newContact.tags}
+                    onChange={e => setNewContact({...newContact, tags: e.target.value})}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl"
+                    placeholder="vip, milano, prospect"
+                  />
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <button type="button" onClick={() => setShowAddContactModal(false)} className="flex-1 py-4 font-bold text-gray-500">Annulla</button>
+                  <button type="submit" className="flex-1 bg-black text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-gray-800">Aggiungi</button>
+                </div>
+              </form>
             </div>
           </div>
         )}
