@@ -5,9 +5,11 @@ import { BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
 
 interface Props {
   campaign: Campaign;
+  onSend?: (campaignId: string) => void;
+  canSend?: boolean;
 }
 
-export const CampaignCard: React.FC<Props> = ({ campaign }) => {
+export const CampaignCard: React.FC<Props> = ({ campaign, onSend, canSend }) => {
   const data = [
     { name: 'Sent', value: campaign.sentCount },
     { name: 'Opened', value: campaign.openCount },
@@ -59,6 +61,22 @@ export const CampaignCard: React.FC<Props> = ({ campaign }) => {
           </p>
         </div>
       </div>
+
+      {onSend && (
+        <div className="mt-5">
+          <button
+            type="button"
+            onClick={() => onSend(campaign.id)}
+            disabled={!canSend || campaign.status !== CampaignStatus.DRAFT}
+            className="w-full py-3 rounded-xl font-black transition-all bg-[#25D366] text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {campaign.status === CampaignStatus.SENDING ? 'Invio in corso…' : 'Invia campagna'}
+          </button>
+          {(!canSend) && (
+            <p className="mt-2 text-[10px] font-bold text-red-500 text-center">Configura prima le API WhatsApp nelle Impostazioni.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

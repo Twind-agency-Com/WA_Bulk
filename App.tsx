@@ -239,26 +239,50 @@ const App: React.FC = () => {
   };
 ;
 
-  const launchCampaign = (id: string) => {
+  const launchCampaign = async (id: string) => {
     if (!apiConfig.isConfigured) {
       alert("Configura prima le API nelle impostazioni!");
       setActiveTab('settings');
       return;
     }
+
+    const campaign = campaigns.find(c => c.id === id);
+    if (!campaign) return;
+    if (campaign.status !== CampaignStatus.DRAFT) return;
+
     setCampaigns(prev => prev.map(c => c.id === id ? { ...c, status: CampaignStatus.SENDING } : c));
-    setTimeout(() => {
-      setCampaigns(prev => prev.map(c => {
-        if (c.id === id) {
-          return { 
-            ...c, 
-            status: CampaignStatus.COMPLETED, 
-            sentCount: c.totalContacts, 
-            openCount: Math.floor(c.totalContacts * (0.6 + Math.random() * 0.3)) 
-          };
-        }
-        return c;
-      }));
-    }, 2500);
+
+    try {
+      const res = await fetch('/.netlify/functions/sendCampaign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accessToken: apiConfig.accessToken,
+          phoneNumberId: apiConfig.phoneNumberId,
+          messageText: campaign.messageText,
+          contacts: contacts.map(ct => ({ name: ct.name, phone: ct.phone }))
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || `Invio fallito (HTTP ${res.status})`);
+      }
+
+      const sent = Number(data?.sentCount ?? 0);
+      const failed = Number(data?.failedCount ?? 0);
+      alert(`Invio completato. Inviati: ${sent}. Falliti: ${failed}.`);
+
+      setCampaigns(prev => prev.map(c => c.id === id ? {
+        ...c,
+        status: failed > 0 ? CampaignStatus.FAILED : CampaignStatus.COMPLETED,
+        sentCount: sent,
+        openCount: 0
+      } : c));
+    } catch (err: any) {
+      alert(err?.message || 'Errore durante invio campagna');
+      setCampaigns(prev => prev.map(c => c.id === id ? { ...c, status: CampaignStatus.FAILED } : c));
+    }
   };
 
   if (!isAuthenticated) {
@@ -563,7 +587,14 @@ const App: React.FC = () => {
         {activeTab === 'settings' && renderSettings()}
         {activeTab === 'campaigns' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in">
-            {campaigns.length > 0 ? campaigns.map(c => <CampaignCard key={c.id} campaign={c} />) : <div className="col-span-full py-20 text-center text-gray-400 font-bold border-2 border-dashed border-gray-200 rounded-3xl">Nessuna campagna creata.</div>}
+            {campaigns.length > 0 ? campaigns.map(c => (
+              <CampaignCard
+                key={c.id}
+                campaign={c}
+                onSend={launchCampaign}
+                canSend={apiConfig.isConfigured}
+              />
+            )) : <div className="col-span-full py-20 text-center text-gray-400 font-bold border-2 border-dashed border-gray-200 rounded-3xl">Nessuna campagna creata.</div>}
           </div>
         )}
 
